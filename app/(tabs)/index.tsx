@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import * as Haptics from "expo-haptics";
+import * as Notifications from "expo-notifications";
 
 import { Audio } from "expo-av";
 
@@ -235,6 +236,32 @@ export default function NoisesScreen() {
     });
   };
 
+  useEffect(() => {
+    // Request notification permissions
+    Notifications.requestPermissionsAsync();
+
+    // Configure notifications
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      }),
+    });
+  }, []);
+
+  const showPlayingNotification = async (noiseName: string) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Now Playing",
+        body: noiseName,
+        data: { noiseName },
+        categoryIdentifier: "playback",
+      },
+      trigger: null,
+    });
+  };
+
   const handleNoiseTap = async (noise: NoiseType) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -245,11 +272,13 @@ export default function NoisesScreen() {
         await sound?.unloadAsync();
         setSound(null);
         setIsPlaying(null);
+        await Notifications.dismissAllNotificationsAsync();
       } else {
         if (sound) {
           stopPulseAnimation(isPlaying!);
           await sound.stopAsync();
           await sound.unloadAsync();
+          await Notifications.dismissAllNotificationsAsync();
         }
 
         if (noise.soundFile) {
@@ -259,22 +288,13 @@ export default function NoisesScreen() {
               isLooping: true,
               shouldPlay: true,
               volume: 1.0,
-              progressUpdateIntervalMillis: 500,
-              shouldCorrectPitch: true,
             }
           );
+
           setSound(newSound);
           setIsPlaying(noise.name);
           startPulseAnimation(noise.name);
-
-          // Optional: Preload the sound to avoid gaps when looping
-          newSound.setOnPlaybackStatusUpdate((status) => {
-            if (!status.isLoaded) {
-              console.warn("Sound not loaded yet");
-            } else if (status.didJustFinish && status.isLooping) {
-              newSound.replayAsync();
-            }
-          });
+          await showPlayingNotification(noise.name);
         }
       }
     } catch (error) {
@@ -290,6 +310,24 @@ export default function NoisesScreen() {
         }
       : undefined;
   }, [sound]);
+
+  // Add this useEffect at the top level of your component
+  useEffect(() => {
+    const configureAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+      } catch (error) {
+        console.error("Error setting audio mode:", error);
+      }
+    };
+
+    configureAudio();
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-[#05243c]">
