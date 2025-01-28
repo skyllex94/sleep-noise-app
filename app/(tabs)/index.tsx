@@ -9,13 +9,27 @@ import {
 } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import * as Haptics from "expo-haptics";
-import { Ionicons } from "@expo/vector-icons";
+
 import { Audio } from "expo-av";
+
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome5,
+  FontAwesome6,
+} from "@expo/vector-icons";
 
 interface NoiseType {
   name: string;
   color: string;
   soundFile?: number;
+  icon?: string;
+  iconFamily?:
+    | "Ionicons"
+    | "MaterialCommunityIcons"
+    | "FontAwesome6"
+    | "FontAwesome5";
+  iconColor?: string;
 }
 
 interface NoiseGroupType {
@@ -52,11 +66,21 @@ const noiseGroups: NoiseGroupType[] = [
         color: "#00FF00",
         soundFile: require("../../assets/noises/green.mp3"),
       },
-      { name: "Brown Noise", color: "#8B4513" },
       {
-        name: "Orange Noise",
-        color: "#FFB6C1",
-        soundFile: require("../../assets/noises/orange.mp3"),
+        name: "Nature Sound",
+        color: "#FFFFFF",
+        icon: "leaf",
+        iconFamily: "Ionicons",
+        iconColor: "black",
+        soundFile: require("../../assets/noises/stress-nature.mp3"),
+      },
+      {
+        name: "Relaxing Noise",
+        color: "#FFFFFF",
+        icon: "bee-flower",
+        iconFamily: "MaterialCommunityIcons",
+        iconColor: "black",
+        soundFile: require("../../assets/noises/stress-relaxing.mp3"),
       },
     ],
   },
@@ -73,15 +97,43 @@ const noiseGroups: NoiseGroupType[] = [
         color: "#9400D3",
         soundFile: require("../../assets/noises/purple.mp3"),
       },
-      { name: "Brown Noise", color: "#8B4513" },
+      {
+        name: "Tinnitus Noise",
+        color: "#FFFFFF",
+        icon: "ear-listen",
+        iconFamily: "FontAwesome6",
+        iconColor: "black",
+        soundFile: require("../../assets/noises/tinnitus-silk.mp3"),
+      },
     ],
   },
   {
     title: "Focus & Productivity",
     noises: [
-      { name: "Pink Noise", color: "#FFB6C1" },
-      { name: "Brown Noise", color: "#8B4513" },
-      { name: "Blue Noise", color: "#0000FF" },
+      {
+        name: "40hz Binaural Beats",
+        color: "#FFFFFF",
+        icon: "hand-holding-water",
+        iconFamily: "FontAwesome5",
+        iconColor: "black",
+        soundFile: require("../../assets/noises/focus-40hz.mp3"),
+      },
+      {
+        name: "Fosus & Memory Sound",
+        color: "#FFFFFF",
+        icon: "brain",
+        iconFamily: "FontAwesome5",
+        iconColor: "black",
+        soundFile: require("../../assets/noises/focus-quantum.mp3"),
+      },
+      {
+        name: "Universe Sound",
+        color: "#FFFFFF",
+        icon: "cloud",
+        iconFamily: "FontAwesome5",
+        iconColor: "black",
+        soundFile: require("../../assets/noises/focus-universe.mp3"),
+      },
     ],
   },
 ];
@@ -324,7 +376,7 @@ export default function NoisesScreen() {
                               ))}
 
                             <View
-                              className="w-12 h-12 rounded-full"
+                              className="w-12 h-12 rounded-full items-center justify-center"
                               style={{
                                 backgroundColor: noise.color,
                                 shadowColor: noise.color,
@@ -333,7 +385,41 @@ export default function NoisesScreen() {
                                 shadowRadius: 6,
                                 elevation: 5,
                               }}
-                            />
+                            >
+                              {noise.icon &&
+                                noise.iconFamily === "Ionicons" && (
+                                  <Ionicons
+                                    name={noise.icon as any}
+                                    size={24}
+                                    color={noise.iconColor || "#052642"}
+                                  />
+                                )}
+                              {noise.icon &&
+                                noise.iconFamily ===
+                                  "MaterialCommunityIcons" && (
+                                  <MaterialCommunityIcons
+                                    name={noise.icon as any}
+                                    size={24}
+                                    color={noise.iconColor || "#052642"}
+                                  />
+                                )}
+                              {noise.icon &&
+                                noise.iconFamily === "FontAwesome6" && (
+                                  <FontAwesome6
+                                    name={noise.icon as any}
+                                    size={24}
+                                    color={noise.iconColor || "#052642"}
+                                  />
+                                )}
+                              {noise.icon &&
+                                noise.iconFamily === "FontAwesome5" && (
+                                  <FontAwesome5
+                                    name={noise.icon as any}
+                                    size={22}
+                                    color={noise.iconColor || "#052642"}
+                                  />
+                                )}
+                            </View>
                           </View>
                           <Text className="text-white text-center text-[12px] max-w-16 mb-2">
                             {/* {noise.name} */}

@@ -44,10 +44,10 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-      <Stack.Screen name="main" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="index" />
     </Stack>
   );
 }
