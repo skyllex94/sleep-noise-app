@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Linking,
   Share,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
@@ -189,129 +190,131 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#021d32]">
-      {/* Options Section */}
-      <View className="px-4">
-        <Text className="text-gray-400 text-[14px] mb-4 font-semibold mt-4">
-          OPTIONS
-        </Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Options Section */}
+        <View className="px-4">
+          <Text className="text-gray-400 text-[14px] mb-4 font-semibold mt-4">
+            OPTIONS
+          </Text>
 
-        {/* Timer Control */}
-        <View className="bg-[#0A3A5A] rounded-xl p-4 mb-4">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center">
-              <Ionicons name="timer-outline" size={24} color="#FFD700" />
+          {/* Timer Control */}
+          <View className="bg-[#0A3A5A] rounded-xl p-4 mb-4">
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-row items-center">
+                <Ionicons name="timer-outline" size={24} color="#FFD700" />
+                <Text className="text-white text-[16px] font-semibold ml-3">
+                  Set a Timer
+                </Text>
+              </View>
+              <Switch
+                value={timerEnabled}
+                onValueChange={handleTimerToggle}
+                trackColor={{ false: "#4A4A4A", true: "#FFD700" }}
+                thumbColor={timerEnabled ? "#FFFFFF" : "#f4f3f4"}
+              />
+            </View>
+            {timerEnabled && (
+              <Text className="text-gray-300 text-[14px]">
+                Sound will stop after {remainingTime ?? Math.round(timerValue)}{" "}
+                {(remainingTime ?? Math.round(timerValue)) === 1
+                  ? "minute"
+                  : "minutes"}
+              </Text>
+            )}
+          </View>
+
+          {/* Volume Control */}
+          <View className="bg-[#0A3A5A] rounded-xl p-4 mb-4">
+            <View className="flex-row items-center mb-4">
+              <Ionicons name="volume-high-outline" size={24} color="#FFD700" />
               <Text className="text-white text-[16px] font-semibold ml-3">
-                Set a Timer
+                Volume
               </Text>
             </View>
-            <Switch
-              value={timerEnabled}
-              onValueChange={handleTimerToggle}
-              trackColor={{ false: "#4A4A4A", true: "#FFD700" }}
-              thumbColor={timerEnabled ? "#FFFFFF" : "#f4f3f4"}
-            />
-          </View>
-          {timerEnabled && (
-            <Text className="text-gray-300 text-[14px]">
-              Sound will stop after {remainingTime ?? Math.round(timerValue)}{" "}
-              {(remainingTime ?? Math.round(timerValue)) === 1
-                ? "minute"
-                : "minutes"}
-            </Text>
-          )}
-        </View>
-
-        {/* Volume Control */}
-        <View className="bg-[#0A3A5A] rounded-xl p-4 mb-4">
-          <View className="flex-row items-center mb-4">
-            <Ionicons name="volume-high-outline" size={24} color="#FFD700" />
-            <Text className="text-white text-[16px] font-semibold ml-3">
-              Volume
-            </Text>
-          </View>
-          <View className="flex-row items-center justify-between">
-            <Slider
-              style={{ width: "80%", height: 40 }}
-              minimumValue={0}
-              maximumValue={1}
-              value={volumeValue}
-              onValueChange={handleVolumeChange}
-              minimumTrackTintColor="#FFD700"
-              maximumTrackTintColor="#4A4A4A"
-              thumbTintColor="#FFD700"
-            />
-            <Text className="text-white text-[14px] ml-2">
-              {Math.round(volumeValue * 100)}%
-            </Text>
+            <View className="flex-row items-center justify-between">
+              <Slider
+                style={{ width: "80%", height: 40 }}
+                minimumValue={0}
+                maximumValue={1}
+                value={volumeValue}
+                onValueChange={handleVolumeChange}
+                minimumTrackTintColor="#FFD700"
+                maximumTrackTintColor="#4A4A4A"
+                thumbTintColor="#FFD700"
+              />
+              <Text className="text-white text-[14px] ml-2">
+                {Math.round(volumeValue * 100)}%
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* General Section */}
-      <View className="px-4 mt-6">
-        <Text className="text-gray-400 text-[14px] mb-4 font-semibold">
-          GENERAL
-        </Text>
+        {/* General Section */}
+        <View className="px-4 mt-6">
+          <Text className="text-gray-400 text-[14px] mb-4 font-semibold">
+            GENERAL
+          </Text>
 
-        {/* Premium Banner - only show if not pro member */}
-        {!isProMember && renderPremiumBanner()}
+          {/* Premium Banner - only show if not pro member */}
+          {!isProMember && renderPremiumBanner()}
 
-        <View className="bg-[#0A3A5A] rounded-xl overflow-hidden">
-          <TouchableOpacity
-            className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
-            activeOpacity={0.7}
-            onPress={handlePrivacyPolicy}
-          >
-            <Text className="text-white text-[16px]">Privacy Policy</Text>
-            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
-          </TouchableOpacity>
+          <View className="bg-[#0A3A5A] rounded-xl overflow-hidden">
+            <TouchableOpacity
+              className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
+              activeOpacity={0.7}
+              onPress={handlePrivacyPolicy}
+            >
+              <Text className="text-white text-[16px]">Privacy Policy</Text>
+              <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
-            activeOpacity={0.7}
-            onPress={() => router.push("/terms")}
-          >
-            <Text className="text-white text-[16px]">Terms of Service</Text>
-            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
+              activeOpacity={0.7}
+              onPress={() => router.push("/terms")}
+            >
+              <Text className="text-white text-[16px]">Terms of Service</Text>
+              <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            className="flex-row items-center justify-between p-4"
-            activeOpacity={0.7}
-            onPress={handleContactUs}
-          >
-            <Text className="text-white text-[16px]">Contact Us</Text>
-            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center justify-between p-4"
+              activeOpacity={0.7}
+              onPress={handleContactUs}
+            >
+              <Text className="text-white text-[16px]">Contact Us</Text>
+              <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* About Section */}
-      <View className="px-4 mt-6">
-        <Text className="text-gray-400 text-[14px] mb-4 font-semibold">
-          ABOUT
-        </Text>
+        {/* About Section */}
+        <View className="px-4 mt-6">
+          <Text className="text-gray-400 text-[14px] mb-4 font-semibold">
+            ABOUT
+          </Text>
 
-        <View className="bg-[#0A3A5A] rounded-xl overflow-hidden">
-          <TouchableOpacity
-            className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
-            activeOpacity={0.7}
-            onPress={handleTellAFriend}
-          >
-            <Text className="text-white text-[16px]">Tell a Friend</Text>
-            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
-          </TouchableOpacity>
+          <View className="bg-[#0A3A5A] rounded-xl overflow-hidden">
+            <TouchableOpacity
+              className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
+              activeOpacity={0.7}
+              onPress={handleTellAFriend}
+            >
+              <Text className="text-white text-[16px]">Tell a Friend</Text>
+              <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            className="flex-row items-center justify-between p-4"
-            activeOpacity={0.7}
-            onPress={handleRateApp}
-          >
-            <Text className="text-white text-[16px]">Rate the App</Text>
-            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center justify-between p-4"
+              activeOpacity={0.7}
+              onPress={handleRateApp}
+            >
+              <Text className="text-white text-[16px]">Rate the App</Text>
+              <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Timer Modal */}
       <Modal

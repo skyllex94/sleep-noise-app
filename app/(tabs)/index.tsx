@@ -7,6 +7,10 @@ import {
   Easing,
   ScrollView,
   Alert,
+  Modal,
+  TouchableOpacity,
+  FlatList,
+  Dimensions,
 } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import * as Haptics from "expo-haptics";
@@ -25,6 +29,8 @@ import {
 
 import { useSound } from "../../context/SoundContext";
 import useRevenueCat from "@/hooks/useRevenueCat";
+import Paywall from "../paywall";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface NoiseType {
   name: string;
@@ -181,6 +187,10 @@ export default function NoisesScreen() {
   const router = useRouter();
   const { isProMember } = useRevenueCat();
   const [trialTimer, setTrialTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+  const { width } = Dimensions.get("window");
 
   const animations = useRef<AnimationsType>(
     noiseGroups.reduce(
@@ -636,12 +646,189 @@ export default function NoisesScreen() {
     }
   }, [expandedCategories]);
 
+  useEffect(() => {
+    checkFirstTime();
+  }, []);
+
+  const checkFirstTime = async () => {
+    try {
+      const hasSeenOnboarding = await AsyncStorage.getItem("hasSeenOnboarding");
+      setShowOnboarding(!hasSeenOnboarding);
+    } catch (error) {
+      console.error("Error checking first time:", error);
+      setShowOnboarding(false);
+    }
+  };
+
+  const resetOnboarding = async () => {
+    try {
+      await AsyncStorage.removeItem("hasSeenOnboarding");
+      setShowOnboarding(false);
+    } catch (error) {
+      console.error("Error resetting onboarding:", error);
+    }
+  };
+
+  const onboardingSlides = [
+    {
+      id: "1",
+      title: "Welcome to Gamma Noise",
+      description:
+        "Discover a world of soothing sounds designed to enhance your daily life",
+      icon: "headset-outline",
+    },
+    {
+      id: "2",
+      title: "Improve Your Focus",
+      description:
+        "Use our carefully curated sounds to boost productivity and concentration",
+      icon: "brain-outline",
+    },
+    {
+      id: "3",
+      title: "Better Sleep & Relaxation",
+      description:
+        "Find peace with our collection of calming sounds and ambient noise",
+      icon: "moon-outline",
+    },
+  ];
+
+  const renderSlide = ({ item, index }: { item: any; index: number }) => {
+    return (
+      <View
+        style={{ width }}
+        className="flex-1 items-center justify-center px-6"
+      >
+        <LinearGradient
+          colors={["rgba(255,215,0,0.15)", "rgba(255,215,0,0)"]}
+          className="w-24 h-24 rounded-full items-center justify-center mb-8"
+        >
+          <Ionicons name={item.icon as any} size={48} color="#FFD700" />
+        </LinearGradient>
+
+        <Text className="text-white text-3xl font-bold mb-4 text-center">
+          {item.title}
+        </Text>
+        <Text className="text-gray-400 text-lg mb-8 text-center leading-6">
+          {item.description}
+        </Text>
+      </View>
+    );
+  };
+
+  const renderOnboarding = () => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showOnboarding}
+        onRequestClose={() => setShowOnboarding(false)}
+      >
+        <View className="flex-1 bg-[#021d32]">
+          <SafeAreaView className="flex-1">
+            {currentSlide < 3 ? (
+              <>
+                <FlatList
+                  ref={flatListRef}
+                  data={onboardingSlides}
+                  renderItem={renderSlide}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={(e) => {
+                    const newIndex = Math.round(
+                      e.nativeEvent.contentOffset.x / width
+                    );
+                    setCurrentSlide(newIndex);
+                  }}
+                />
+
+                {/* Pagination Dots */}
+                <View className="flex-row justify-center mb-8">
+                  {onboardingSlides.map((_, index) => (
+                    <View
+                      key={index}
+                      className={`h-2 w-2 rounded-full mx-1 ${
+                        currentSlide === index
+                          ? "bg-[#FFD700]"
+                          : "bg-gray-500/30"
+                      }`}
+                    />
+                  ))}
+                </View>
+
+                {/* Navigation Buttons */}
+                <View className="px-6 mb-8">
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (currentSlide < 2) {
+                        flatListRef.current?.scrollToIndex({
+                          index: currentSlide + 1,
+                          animated: true,
+                        });
+                        setCurrentSlide(currentSlide + 1);
+                      } else {
+                        setCurrentSlide(3); // Show paywall
+                      }
+                    }}
+                    className="bg-[#FFD700] p-4 rounded-full w-full mb-4"
+                  >
+                    <Text className="text-[#021d32] text-center font-bold text-lg">
+                      {currentSlide === 2 ? "Get Premium Access" : "Next"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      AsyncStorage.setItem("hasSeenOnboarding", "true");
+                      setShowOnboarding(false);
+                    }}
+                    className="p-4"
+                  >
+                    <Text className="text-gray-400 text-center">
+                      Skip for now
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <Paywall
+                onClose={() => {
+                  AsyncStorage.setItem("hasSeenOnboarding", "true");
+                  setShowOnboarding(false);
+                }}
+                onPurchaseComplete={() => {
+                  AsyncStorage.setItem("hasSeenOnboarding", "true");
+                  setShowOnboarding(false);
+                }}
+              />
+            )}
+          </SafeAreaView>
+        </View>
+      </Modal>
+    );
+  };
+
+  // Don't render anything until we check AsyncStorage
+  if (showOnboarding === null) {
+    return null;
+  }
+
   return (
     <View className="flex-1 bg-[#021d32]">
       <SafeAreaView className="flex-1">
-        <Text className="text-white text-center font-bold text-[25px] mb-8 mt-4">
-          Gamma Noise
-        </Text>
+        <View className="flex-row items-center justify-center px-4 mb-8 mt-4">
+          <View className="flex-1" />
+          <Text className="text-white text-center font-bold text-[25px]">
+            Gamma Noise
+          </Text>
+          <View className="flex-1 items-end">
+            {/* Right-aligned container */}
+            <TouchableOpacity onPress={resetOnboarding} className="p-2">
+              <Ionicons name="refresh-circle" size={24} color="#FFD700" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <ScrollView
           className="flex-1"
@@ -706,6 +893,8 @@ export default function NoisesScreen() {
             ))}
           </View>
         </ScrollView>
+
+        {showOnboarding && renderOnboarding()}
       </SafeAreaView>
     </View>
   );
