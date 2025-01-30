@@ -6,6 +6,7 @@ import {
   Animated,
   Easing,
   ScrollView,
+  Alert,
 } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import * as Haptics from "expo-haptics";
@@ -179,7 +180,7 @@ export default function NoisesScreen() {
 
   const router = useRouter();
   const { isProMember } = useRevenueCat();
-  console.log("isProMember:", isProMember);
+  const [trialTimer, setTrialTimer] = useState<NodeJS.Timeout | null>(null);
 
   const animations = useRef<AnimationsType>(
     noiseGroups.reduce(
@@ -319,12 +320,13 @@ export default function NoisesScreen() {
 
   const showPlayingNotification = async (
     noiseName: string,
-    isPlaying: boolean
+    isPlaying: boolean,
+    isPremiumPreview: boolean = false
   ) => {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Now Playing",
-        body: noiseName,
+        body: isPremiumPreview ? `${noiseName} (Minute Preview)` : noiseName,
         data: { noiseName },
         categoryIdentifier: "playback",
         sticky: true,
@@ -333,12 +335,99 @@ export default function NoisesScreen() {
     });
   };
 
+  const showTrialNotification = () => {
+    Alert.alert(
+      "Trial Mode",
+      "This premium sound will play for 1 minute. Get Premium access with 3 days free trial to unlock unlimited listening!",
+      [
+        {
+          text: "Get Premium",
+          onPress: () => {
+            if (sound) {
+              sound.stopAsync();
+              setSound(null);
+              setIsPlaying(null);
+            }
+            router.push("/paywall");
+          },
+          style: "default",
+        },
+        {
+          text: "Continue Trial",
+          style: "cancel",
+        },
+      ]
+    );
+  };
+
   const handleNoiseTap = async (noise: NoiseType) => {
     try {
       // Check if noise requires pro access
       if (!noise.proAccess && !isProMember) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        router.push("/paywall");
+
+        // If the same sound is playing, stop it and clear timer
+        if (isPlaying === noise.name) {
+          if (trialTimer) {
+            clearTimeout(trialTimer);
+            setTrialTimer(null);
+          }
+          if (sound) {
+            stopPulseAnimation(noise.name);
+            await sound.stopAsync();
+            await sound.unloadAsync();
+            await Notifications.dismissAllNotificationsAsync();
+            setSound(null);
+            setIsPlaying(null);
+          }
+          return;
+        }
+
+        // Play sound for 1 minute
+        if (noise.soundFile) {
+          // Clear any existing timer
+          if (trialTimer) {
+            clearTimeout(trialTimer);
+            setTrialTimer(null);
+          }
+
+          // Stop any currently playing sound
+          if (sound) {
+            stopPulseAnimation(isPlaying!);
+            await sound.stopAsync();
+            await sound.unloadAsync();
+            await Notifications.dismissAllNotificationsAsync();
+          }
+
+          const { sound: newSound } = await Audio.Sound.createAsync(
+            noise.soundFile,
+            {
+              isLooping: true,
+              shouldPlay: true,
+              volume: 1.0,
+            }
+          );
+
+          setSound(newSound);
+          setIsPlaying(noise.name);
+          startPulseAnimation(noise.name);
+          await showPlayingNotification(noise.name, true, true);
+
+          // Set timer to stop after 1 minute and show paywall
+          const timer = setTimeout(async () => {
+            if (newSound) {
+              stopPulseAnimation(noise.name);
+              await newSound.stopAsync();
+              await newSound.unloadAsync();
+              await Notifications.dismissAllNotificationsAsync();
+              setSound(null);
+              setIsPlaying(null);
+              router.push("/paywall");
+            }
+          }, 60000); // 1 minute
+
+          setTrialTimer(timer);
+        }
         return;
       }
 
@@ -372,7 +461,7 @@ export default function NoisesScreen() {
           setSound(newSound);
           setIsPlaying(noise.name);
           startPulseAnimation(noise.name);
-          await showPlayingNotification(noise.name, true);
+          await showPlayingNotification(noise.name, true, false);
         }
       }
     } catch (error) {
@@ -429,6 +518,15 @@ export default function NoisesScreen() {
       : undefined;
   }, [sound]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (trialTimer) {
+        clearTimeout(trialTimer);
+      }
+    };
+  }, [trialTimer]);
+
   const toggleCategory = async (category: string) => {
     try {
       const newStates = {
@@ -457,27 +555,26 @@ export default function NoisesScreen() {
         className="items-center px-4"
       >
         <View className="w-24 h-24 items-center justify-center">
-          {isPlaying === noise.name &&
-            pulseAnimations[noise.name].map((ring, index) => (
-              <Animated.View
-                key={index}
-                className="absolute w-[48px] h-[48px] rounded-full"
-                style={{
-                  backgroundColor: noise.color,
-                  opacity: ring.animation.interpolate({
-                    inputRange: [0.3, 1.3, 1.8],
-                    outputRange: [0.3, 0.15, 0],
-                    extrapolate: "clamp",
-                  }),
-                  transform: [
-                    {
-                      scale: ring.animation,
-                    },
-                  ],
-                  position: "absolute",
-                }}
-              />
-            ))}
+          {isPlaying === noise.name && (
+            <View className="absolute w-24 h-24 items-center justify-center">
+              {pulseAnimations[noise.name].map((ring, index) => (
+                <Animated.View
+                  key={index}
+                  className="absolute w-[48px] h-[48px] rounded-full"
+                  style={{
+                    backgroundColor: noise.color,
+                    opacity: ring.animation.interpolate({
+                      inputRange: [0.3, 1.3, 1.8],
+                      outputRange: [0.3, 0.15, 0],
+                      extrapolate: "clamp",
+                    }),
+                    transform: [{ scale: ring.animation }],
+                    position: "absolute",
+                  }}
+                />
+              ))}
+            </View>
+          )}
 
           <View
             className="w-12 h-12 rounded-full items-center justify-center"
@@ -532,16 +629,20 @@ export default function NoisesScreen() {
     );
   };
 
+  // Keep animations running even when category is collapsed
+  useEffect(() => {
+    if (isPlaying) {
+      startPulseAnimation(isPlaying);
+    }
+  }, [expandedCategories]);
+
   return (
     <View className="flex-1 bg-[#021d32]">
       <SafeAreaView className="flex-1">
-        <Link href="/paywall" asChild>
-          <Pressable>
-            <Text className="text-white text-center font-bold text-[25px] mb-8 mt-4">
-              Gamma Noise
-            </Text>
-          </Pressable>
-        </Link>
+        <Text className="text-white text-center font-bold text-[25px] mb-8 mt-4">
+          Gamma Noise
+        </Text>
+
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}

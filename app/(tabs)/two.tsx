@@ -11,12 +11,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import * as Sharing from "expo-sharing";
+import { LinearGradient } from "expo-linear-gradient";
+
 import * as StoreReview from "expo-store-review";
 
 import { useSound } from "../../context/SoundContext";
+import useRevenueCat from "@/hooks/useRevenueCat";
 
 export default function SettingsScreen() {
   const { sound, setSound, setIsPlaying } = useSound();
@@ -27,6 +29,8 @@ export default function SettingsScreen() {
   const [volumeValue, setVolumeValue] = useState(0.8);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const router = useRouter();
+
+  const { isProMember } = useRevenueCat();
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -84,7 +88,6 @@ export default function SettingsScreen() {
   };
 
   const handleVolumeChange = async (value: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setVolumeValue(value);
 
     try {
@@ -148,6 +151,40 @@ export default function SettingsScreen() {
     } catch (error) {
       console.log("Error opening review:", error);
     }
+  };
+
+  const renderPremiumBanner = () => {
+    return (
+      <View className="mb-4">
+        <View className="rounded-xl overflow-hidden">
+          <LinearGradient
+            colors={["#FFD700", "#C27F06"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            className="p-10"
+          >
+            <View className="flex-row items-center p-4 justify-between">
+              <View>
+                <Text className="text-[#021d32] text-[20px] font-semibold">
+                  Enjoy All Sounds
+                </Text>
+                <Text className="text-[#021d32] text-base">
+                  Unlock 9+ Premium Sounds & More
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => router.push("/paywall")}
+                className="bg-white px-4 py-2 rounded-full"
+                activeOpacity={0.7}
+              >
+                <Text className="text-[#021d32] font-semibold">Get Access</Text>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -215,6 +252,9 @@ export default function SettingsScreen() {
         <Text className="text-gray-400 text-[14px] mb-4 font-semibold">
           GENERAL
         </Text>
+
+        {/* Premium Banner - only show if not pro member */}
+        {!isProMember && renderPremiumBanner()}
 
         <View className="bg-[#0A3A5A] rounded-xl overflow-hidden">
           <TouchableOpacity
@@ -288,11 +328,11 @@ export default function SettingsScreen() {
             <View className="flex-row items-center justify-between mb-8">
               <Slider
                 style={{ width: "80%", height: 40 }}
-                minimumValue={1}
-                maximumValue={120}
+                minimumValue={5}
+                maximumValue={360}
+                step={5}
                 value={timerValue}
                 onValueChange={(value) => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setTimerValue(value);
                 }}
                 minimumTrackTintColor="#FFD700"
