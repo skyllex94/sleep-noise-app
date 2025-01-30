@@ -5,11 +5,16 @@ import {
   Switch,
   Modal,
   TouchableOpacity,
+  Linking,
+  Share,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import { useState, useEffect } from "react";
+import { useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
+import * as StoreReview from "expo-store-review";
 
 import { useSound } from "../../context/SoundContext";
 
@@ -21,6 +26,7 @@ export default function SettingsScreen() {
   const [timerActive, setTimerActive] = useState(false);
   const [volumeValue, setVolumeValue] = useState(0.8);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -90,6 +96,60 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleContactUs = async () => {
+    const email = "zionstudiosapps@gmail.com";
+    const subject = "GammaNoise Question";
+    const body =
+      "Hello, I would like to contact you regarding GammaNoise App on the App Store...";
+
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(mailtoUrl);
+      if (canOpen) {
+        await Linking.openURL(mailtoUrl);
+      }
+    } catch (error) {
+      console.log("Error opening email:", error);
+    }
+  };
+
+  const handlePrivacyPolicy = async () => {
+    const url = "https://www.apple.com/legal/privacy/data/en/app-store/";
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      }
+    } catch (error) {
+      console.log("Error opening privacy policy:", error);
+    }
+  };
+
+  const handleTellAFriend = async () => {
+    try {
+      const result = await Share.share({
+        message:
+          "Hey, check-out this app I've been trying out with sleeping better. It also has a bunch more sound for focus and relaxation.",
+      });
+    } catch (error) {
+      console.log("Error sharing app:", error);
+    }
+  };
+
+  const handleRateApp = async () => {
+    try {
+      const isAvailable = await StoreReview.isAvailableAsync();
+      if (isAvailable) {
+        await StoreReview.requestReview();
+      }
+    } catch (error) {
+      console.log("Error opening review:", error);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#021d32]">
       {/* Options Section */}
@@ -147,6 +207,69 @@ export default function SettingsScreen() {
               {Math.round(volumeValue * 100)}%
             </Text>
           </View>
+        </View>
+      </View>
+
+      {/* General Section */}
+      <View className="px-4 mt-6">
+        <Text className="text-gray-400 text-[14px] mb-4 font-semibold">
+          GENERAL
+        </Text>
+
+        <View className="bg-[#0A3A5A] rounded-xl overflow-hidden">
+          <TouchableOpacity
+            className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
+            activeOpacity={0.7}
+            onPress={handlePrivacyPolicy}
+          >
+            <Text className="text-white text-[16px]">Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
+            activeOpacity={0.7}
+            onPress={() => router.push("/terms")}
+          >
+            <Text className="text-white text-[16px]">Terms of Service</Text>
+            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-row items-center justify-between p-4"
+            activeOpacity={0.7}
+            onPress={handleContactUs}
+          >
+            <Text className="text-white text-[16px]">Contact Us</Text>
+            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* About Section */}
+      <View className="px-4 mt-6">
+        <Text className="text-gray-400 text-[14px] mb-4 font-semibold">
+          ABOUT
+        </Text>
+
+        <View className="bg-[#0A3A5A] rounded-xl overflow-hidden">
+          <TouchableOpacity
+            className="flex-row items-center justify-between p-4 border-b border-[#1E3951]"
+            activeOpacity={0.7}
+            onPress={handleTellAFriend}
+          >
+            <Text className="text-white text-[16px]">Tell a Friend</Text>
+            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-row items-center justify-between p-4"
+            activeOpacity={0.7}
+            onPress={handleRateApp}
+          >
+            <Text className="text-white text-[16px]">Rate the App</Text>
+            <Ionicons name="chevron-forward" size={20} color="#FFD700" />
+          </TouchableOpacity>
         </View>
       </View>
 

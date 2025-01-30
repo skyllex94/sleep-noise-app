@@ -10,7 +10,8 @@ import {
 import React, { useState, useRef, useEffect } from "react";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Audio } from "expo-av";
 
@@ -21,8 +22,8 @@ import {
   FontAwesome6,
 } from "@expo/vector-icons";
 
-import { LinearGradient } from "expo-linear-gradient";
 import { useSound } from "../../context/SoundContext";
+import useRevenueCat from "@/hooks/useRevenueCat";
 
 interface NoiseType {
   name: string;
@@ -35,6 +36,7 @@ interface NoiseType {
     | "FontAwesome6"
     | "FontAwesome5";
   iconColor?: string;
+  proAccess?: boolean;
 }
 
 interface NoiseGroupType {
@@ -50,16 +52,19 @@ const noiseGroups: NoiseGroupType[] = [
         name: "White Noise",
         color: "#FFFFFF",
         soundFile: require("../../assets/noises/white.mp3"),
+        proAccess: true,
       },
       {
         name: "Pink Noise",
         color: "#FFB6C1",
         soundFile: require("../../assets/noises/pink.mp3"),
+        proAccess: true,
       },
       {
         name: "Brown Noise",
         color: "#8B4513",
         soundFile: require("../../assets/noises/brown.mp3"),
+        proAccess: false,
       },
     ],
   },
@@ -70,6 +75,7 @@ const noiseGroups: NoiseGroupType[] = [
         name: "Green Noise",
         color: "#00FF00",
         soundFile: require("../../assets/noises/green.mp3"),
+        proAccess: true,
       },
       {
         name: "Nature Sound",
@@ -78,6 +84,7 @@ const noiseGroups: NoiseGroupType[] = [
         iconFamily: "Ionicons",
         iconColor: "black",
         soundFile: require("../../assets/noises/stress-nature.mp3"),
+        proAccess: false,
       },
       {
         name: "Relaxing Noise",
@@ -86,6 +93,7 @@ const noiseGroups: NoiseGroupType[] = [
         iconFamily: "MaterialCommunityIcons",
         iconColor: "black",
         soundFile: require("../../assets/noises/stress-relaxing.mp3"),
+        proAccess: false,
       },
     ],
   },
@@ -96,11 +104,13 @@ const noiseGroups: NoiseGroupType[] = [
         name: "Blue Noise",
         color: "#0000FF",
         soundFile: require("../../assets/noises/blue.mp3"),
+        proAccess: false,
       },
       {
         name: "Purple Noise",
         color: "#9400D3",
         soundFile: require("../../assets/noises/purple.mp3"),
+        proAccess: false,
       },
       {
         name: "Tinnitus Noise",
@@ -109,6 +119,7 @@ const noiseGroups: NoiseGroupType[] = [
         iconFamily: "FontAwesome6",
         iconColor: "black",
         soundFile: require("../../assets/noises/tinnitus-silk.mp3"),
+        proAccess: false,
       },
     ],
   },
@@ -122,6 +133,7 @@ const noiseGroups: NoiseGroupType[] = [
         iconFamily: "FontAwesome5",
         iconColor: "black",
         soundFile: require("../../assets/noises/focus-40hz.mp3"),
+        proAccess: false,
       },
       {
         name: "Fosus & Memory Sound",
@@ -130,6 +142,7 @@ const noiseGroups: NoiseGroupType[] = [
         iconFamily: "FontAwesome5",
         iconColor: "black",
         soundFile: require("../../assets/noises/focus-quantum.mp3"),
+        proAccess: false,
       },
       {
         name: "Universe Sound",
@@ -138,6 +151,7 @@ const noiseGroups: NoiseGroupType[] = [
         iconFamily: "FontAwesome5",
         iconColor: "black",
         soundFile: require("../../assets/noises/focus-universe.mp3"),
+        proAccess: false,
       },
     ],
   },
@@ -154,9 +168,18 @@ interface PulseRing {
 
 export default function NoisesScreen() {
   const { sound, setSound, isPlaying, setIsPlaying } = useSound();
-  const [expandedGroups, setExpandedGroups] = useState<{
+  const [expandedCategories, setExpandedCategories] = useState<{
     [key: string]: boolean;
-  }>(noiseGroups.reduce((acc, group) => ({ ...acc, [group.title]: true }), {}));
+  }>({
+    Sleep: true,
+    Focus: true,
+    Relax: true,
+    Nature: false,
+  });
+
+  const router = useRouter();
+  const { isProMember } = useRevenueCat();
+  console.log("isProMember:", isProMember);
 
   const animations = useRef<AnimationsType>(
     noiseGroups.reduce(
@@ -190,7 +213,7 @@ export default function NoisesScreen() {
 
   const toggleGroup = (groupTitle: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const isExpanding = !expandedGroups[groupTitle];
+    const isExpanding = !expandedCategories[groupTitle];
 
     Animated.timing(animations[groupTitle], {
       toValue: isExpanding ? 1 : 0,
@@ -198,7 +221,7 @@ export default function NoisesScreen() {
       useNativeDriver: false,
     }).start();
 
-    setExpandedGroups((prev) => ({
+    setExpandedCategories((prev) => ({
       ...prev,
       [groupTitle]: !prev[groupTitle],
     }));
@@ -312,6 +335,13 @@ export default function NoisesScreen() {
 
   const handleNoiseTap = async (noise: NoiseType) => {
     try {
+      // Check if noise requires pro access
+      if (!noise.proAccess && !isProMember) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push("/paywall");
+        return;
+      }
+
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       if (isPlaying === noise.name) {
@@ -350,16 +380,7 @@ export default function NoisesScreen() {
     }
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
-
-  // Add this useEffect at the top level of your component
+  // Play sound in bg and silence mode
   useEffect(() => {
     const configureAudio = async () => {
       try {
@@ -376,6 +397,140 @@ export default function NoisesScreen() {
 
     configureAudio();
   }, []);
+
+  // Load saved states on mount
+  useEffect(() => {
+    const loadExpandedStates = async () => {
+      try {
+        const savedStates = await AsyncStorage.getItem("expandedCategories");
+        if (savedStates) {
+          setExpandedCategories(JSON.parse(savedStates));
+        } else {
+          // If no saved states, save the default states
+          await AsyncStorage.setItem(
+            "expandedCategories",
+            JSON.stringify(expandedCategories)
+          );
+        }
+      } catch (error) {
+        console.log("Error loading category states:", error);
+      }
+    };
+
+    loadExpandedStates();
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
+  const toggleCategory = async (category: string) => {
+    try {
+      const newStates = {
+        ...expandedCategories,
+        [category]: !expandedCategories[category],
+      };
+
+      // Update state
+      setExpandedCategories(newStates);
+
+      // Save to AsyncStorage immediately
+      await AsyncStorage.setItem(
+        "expandedCategories",
+        JSON.stringify(newStates)
+      );
+    } catch (error) {
+      console.log("Error saving category states:", error);
+    }
+  };
+
+  const renderNoiseButton = (noise: NoiseType, noiseIndex: number) => {
+    return (
+      <Pressable
+        key={noiseIndex}
+        onPress={() => handleNoiseTap(noise)}
+        className="items-center px-4"
+      >
+        <View className="w-24 h-24 items-center justify-center">
+          {isPlaying === noise.name &&
+            pulseAnimations[noise.name].map((ring, index) => (
+              <Animated.View
+                key={index}
+                className="absolute w-[48px] h-[48px] rounded-full"
+                style={{
+                  backgroundColor: noise.color,
+                  opacity: ring.animation.interpolate({
+                    inputRange: [0.3, 1.3, 1.8],
+                    outputRange: [0.3, 0.15, 0],
+                    extrapolate: "clamp",
+                  }),
+                  transform: [
+                    {
+                      scale: ring.animation,
+                    },
+                  ],
+                  position: "absolute",
+                }}
+              />
+            ))}
+
+          <View
+            className="w-12 h-12 rounded-full items-center justify-center"
+            style={{
+              backgroundColor: noise.color,
+              shadowColor: noise.color,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.6,
+              shadowRadius: 6,
+              elevation: 5,
+            }}
+          >
+            {!noise.proAccess && !isProMember && (
+              <View className="absolute -top-1 -right-1 bg-[#FFD700] rounded-full p-1">
+                <Ionicons name="lock-closed" size={12} color="#021d32" />
+              </View>
+            )}
+            {noise.icon && noise.iconFamily === "Ionicons" && (
+              <Ionicons
+                name={noise.icon as any}
+                size={24}
+                color={noise.iconColor || "#052642"}
+              />
+            )}
+            {noise.icon && noise.iconFamily === "MaterialCommunityIcons" && (
+              <MaterialCommunityIcons
+                name={noise.icon as any}
+                size={24}
+                color={noise.iconColor || "#052642"}
+              />
+            )}
+            {noise.icon && noise.iconFamily === "FontAwesome6" && (
+              <FontAwesome6
+                name={noise.icon as any}
+                size={24}
+                color={noise.iconColor || "#052642"}
+              />
+            )}
+            {noise.icon && noise.iconFamily === "FontAwesome5" && (
+              <FontAwesome5
+                name={noise.icon as any}
+                size={22}
+                color={noise.iconColor || "#052642"}
+              />
+            )}
+          </View>
+        </View>
+        <Text className="text-white text-center text-[12px] max-w-16 mb-2">
+          {noise.name}
+        </Text>
+      </Pressable>
+    );
+  };
 
   return (
     <View className="flex-1 bg-[#021d32]">
@@ -409,7 +564,7 @@ export default function NoisesScreen() {
                 }}
               >
                 <Pressable
-                  onPress={() => toggleGroup(group.title)}
+                  onPress={() => toggleCategory(group.title)}
                   className="flex-row justify-between items-center p-4"
                 >
                   <Text className="text-white text-[18px] font-semibold">
@@ -417,7 +572,7 @@ export default function NoisesScreen() {
                   </Text>
                   <Ionicons
                     name={
-                      expandedGroups[group.title]
+                      expandedCategories[group.title]
                         ? "chevron-up"
                         : "chevron-down"
                     }
@@ -436,91 +591,12 @@ export default function NoisesScreen() {
                     overflow: "hidden",
                   }}
                 >
-                  {expandedGroups[group.title] && (
+                  {expandedCategories[group.title] && (
                     <View>
                       <View className="flex-row justify-around px-2">
-                        {group.noises.map((noise, noiseIndex) => (
-                          <Pressable
-                            key={noiseIndex}
-                            onPress={() => handleNoiseTap(noise)}
-                            className="items-center px-4"
-                          >
-                            <View className="w-24 h-24 items-center justify-center">
-                              {isPlaying === noise.name &&
-                                pulseAnimations[noise.name].map(
-                                  (ring, index) => (
-                                    <Animated.View
-                                      key={index}
-                                      className="absolute w-[48px] h-[48px] rounded-full"
-                                      style={{
-                                        backgroundColor: noise.color,
-                                        opacity: ring.animation.interpolate({
-                                          inputRange: [0.3, 1.3, 1.8],
-                                          outputRange: [0.3, 0.15, 0],
-                                          extrapolate: "clamp",
-                                        }),
-                                        transform: [
-                                          {
-                                            scale: ring.animation,
-                                          },
-                                        ],
-                                        position: "absolute",
-                                      }}
-                                    />
-                                  )
-                                )}
-
-                              <View
-                                className="w-12 h-12 rounded-full items-center justify-center"
-                                style={{
-                                  backgroundColor: noise.color,
-                                  shadowColor: noise.color,
-                                  shadowOffset: { width: 0, height: 0 },
-                                  shadowOpacity: 0.6,
-                                  shadowRadius: 6,
-                                  elevation: 5,
-                                }}
-                              >
-                                {noise.icon &&
-                                  noise.iconFamily === "Ionicons" && (
-                                    <Ionicons
-                                      name={noise.icon as any}
-                                      size={24}
-                                      color={noise.iconColor || "#052642"}
-                                    />
-                                  )}
-                                {noise.icon &&
-                                  noise.iconFamily ===
-                                    "MaterialCommunityIcons" && (
-                                    <MaterialCommunityIcons
-                                      name={noise.icon as any}
-                                      size={24}
-                                      color={noise.iconColor || "#052642"}
-                                    />
-                                  )}
-                                {noise.icon &&
-                                  noise.iconFamily === "FontAwesome6" && (
-                                    <FontAwesome6
-                                      name={noise.icon as any}
-                                      size={24}
-                                      color={noise.iconColor || "#052642"}
-                                    />
-                                  )}
-                                {noise.icon &&
-                                  noise.iconFamily === "FontAwesome5" && (
-                                    <FontAwesome5
-                                      name={noise.icon as any}
-                                      size={22}
-                                      color={noise.iconColor || "#052642"}
-                                    />
-                                  )}
-                              </View>
-                            </View>
-                            <Text className="text-white text-center text-[12px] max-w-16 mb-2">
-                              {/* {noise.name} */}
-                            </Text>
-                          </Pressable>
-                        ))}
+                        {group.noises.map((noise, noiseIndex) =>
+                          renderNoiseButton(noise, noiseIndex)
+                        )}
                       </View>
                     </View>
                   )}
