@@ -97,16 +97,32 @@ export default function Paywall({ onClose, onPurchaseComplete }: PaywallProps) {
     setPurchaseSpinner(false);
   }
 
+  const calculateSavings = () => {
+    if (
+      !currentOffering?.monthly?.product?.price ||
+      !currentOffering?.annual?.product?.price
+    ) {
+      return 0;
+    }
+
+    const monthlyAnnualCost = currentOffering.monthly.product.price * 12;
+    const annualCost = currentOffering.annual.product.price;
+    const savingsPercentage =
+      ((monthlyAnnualCost - annualCost) / monthlyAnnualCost) * 100;
+
+    return Math.round(savingsPercentage);
+  };
+
   return (
     <View className="flex-1 bg-[#021d32]">
       <SafeAreaView className="flex-1">
         {/* Close Button */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={handleClose}
           className="absolute right-4 top-8 z-10"
         >
           <Ionicons name="close-circle" size={32} color="#28384f" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <Spinner visible={purchaseSpinner} />
 
@@ -230,7 +246,7 @@ export default function Paywall({ onClose, onPurchaseComplete }: PaywallProps) {
               >
                 <View className="absolute -top-2 right-4 bg-[#FFD700] px-2 py-1 rounded-full">
                   <Text className="text-[#021d32] text-[10px] font-bold">
-                    SAVE 16%
+                    SAVE {calculateSavings()}%
                   </Text>
                 </View>
                 <Text className="text-white text-center font-semibold text-[16px]">
@@ -249,7 +265,7 @@ export default function Paywall({ onClose, onPurchaseComplete }: PaywallProps) {
                 activeOpacity={0.7}
                 onPress={() =>
                   Linking.openURL(
-                    "https://www.apple.com/legal/privacy/data/en/app-store/"
+                    "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
                   )
                 }
               >

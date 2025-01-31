@@ -6,16 +6,14 @@ import {
   Animated,
   Easing,
   ScrollView,
-  Alert,
-  Modal,
   TouchableOpacity,
-  FlatList,
-  Dimensions,
+  Image,
+  Alert,
 } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Audio } from "expo-av";
@@ -29,140 +27,9 @@ import {
 
 import { useSound } from "../../context/SoundContext";
 import useRevenueCat from "@/hooks/useRevenueCat";
-import Paywall from "../paywall";
-import { LinearGradient } from "expo-linear-gradient";
 
-interface NoiseType {
-  name: string;
-  color: string;
-  soundFile?: number;
-  icon?: string;
-  iconFamily?:
-    | "Ionicons"
-    | "MaterialCommunityIcons"
-    | "FontAwesome6"
-    | "FontAwesome5";
-  iconColor?: string;
-  proAccess?: boolean;
-}
-
-interface NoiseGroupType {
-  title: string;
-  noises: NoiseType[];
-}
-
-const noiseGroups: NoiseGroupType[] = [
-  {
-    title: "Sleep Aid & Anxiety",
-    noises: [
-      {
-        name: "White Noise",
-        color: "#FFFFFF",
-        soundFile: require("../../assets/noises/white.mp3"),
-        proAccess: true,
-      },
-      {
-        name: "Pink Noise",
-        color: "#FFB6C1",
-        soundFile: require("../../assets/noises/pink.mp3"),
-        proAccess: true,
-      },
-      {
-        name: "Brown Noise",
-        color: "#8B4513",
-        soundFile: require("../../assets/noises/brown.mp3"),
-        proAccess: false,
-      },
-    ],
-  },
-  {
-    title: "Stress Management",
-    noises: [
-      {
-        name: "Green Noise",
-        color: "#00FF00",
-        soundFile: require("../../assets/noises/green.mp3"),
-        proAccess: true,
-      },
-      {
-        name: "Nature Sound",
-        color: "#FFFFFF",
-        icon: "leaf",
-        iconFamily: "Ionicons",
-        iconColor: "black",
-        soundFile: require("../../assets/noises/stress-nature.mp3"),
-        proAccess: false,
-      },
-      {
-        name: "Relaxing Noise",
-        color: "#FFFFFF",
-        icon: "bee-flower",
-        iconFamily: "MaterialCommunityIcons",
-        iconColor: "black",
-        soundFile: require("../../assets/noises/stress-relaxing.mp3"),
-        proAccess: false,
-      },
-    ],
-  },
-  {
-    title: "Tinnitus Relief",
-    noises: [
-      {
-        name: "Blue Noise",
-        color: "#0000FF",
-        soundFile: require("../../assets/noises/blue.mp3"),
-        proAccess: false,
-      },
-      {
-        name: "Purple Noise",
-        color: "#9400D3",
-        soundFile: require("../../assets/noises/purple.mp3"),
-        proAccess: false,
-      },
-      {
-        name: "Tinnitus Noise",
-        color: "#FFFFFF",
-        icon: "ear-listen",
-        iconFamily: "FontAwesome6",
-        iconColor: "black",
-        soundFile: require("../../assets/noises/tinnitus-silk.mp3"),
-        proAccess: false,
-      },
-    ],
-  },
-  {
-    title: "Focus & Productivity",
-    noises: [
-      {
-        name: "40hz Binaural Beats",
-        color: "#FFFFFF",
-        icon: "hand-holding-water",
-        iconFamily: "FontAwesome5",
-        iconColor: "black",
-        soundFile: require("../../assets/noises/focus-40hz.mp3"),
-        proAccess: false,
-      },
-      {
-        name: "Fosus & Memory Sound",
-        color: "#FFFFFF",
-        icon: "brain",
-        iconFamily: "FontAwesome5",
-        iconColor: "black",
-        soundFile: require("../../assets/noises/focus-quantum.mp3"),
-        proAccess: false,
-      },
-      {
-        name: "Universe Sound",
-        color: "#FFFFFF",
-        icon: "cloud",
-        iconFamily: "FontAwesome5",
-        iconColor: "black",
-        soundFile: require("../../assets/noises/focus-universe.mp3"),
-        proAccess: false,
-      },
-    ],
-  },
-];
+import onBoardingModal from "@/components/onBoardingModal";
+import { noiseGroups, NoiseType } from "@/constants/noises";
 
 interface AnimationsType {
   [key: string]: Animated.Value;
@@ -188,9 +55,6 @@ export default function NoisesScreen() {
   const { isProMember } = useRevenueCat();
   const [trialTimer, setTrialTimer] = useState<NodeJS.Timeout | null>(null);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
-  const { width } = Dimensions.get("window");
 
   const animations = useRef<AnimationsType>(
     noiseGroups.reduce(
@@ -221,22 +85,6 @@ export default function NoisesScreen() {
       {}
     )
   ).current;
-
-  const toggleGroup = (groupTitle: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const isExpanding = !expandedCategories[groupTitle];
-
-    Animated.timing(animations[groupTitle], {
-      toValue: isExpanding ? 1 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [groupTitle]: !prev[groupTitle],
-    }));
-  };
 
   const startPulseAnimation = (noiseName: string) => {
     pulseAnimations[noiseName].forEach((ring) => {
@@ -343,31 +191,6 @@ export default function NoisesScreen() {
       },
       trigger: null,
     });
-  };
-
-  const showTrialNotification = () => {
-    Alert.alert(
-      "Trial Mode",
-      "This premium sound will play for 1 minute. Get Premium access with 3 days free trial to unlock unlimited listening!",
-      [
-        {
-          text: "Get Premium",
-          onPress: () => {
-            if (sound) {
-              sound.stopAsync();
-              setSound(null);
-              setIsPlaying(null);
-            }
-            router.push("/paywall");
-          },
-          style: "default",
-        },
-        {
-          text: "Continue Trial",
-          style: "cancel",
-        },
-      ]
-    );
   };
 
   const handleNoiseTap = async (noise: NoiseType) => {
@@ -497,7 +320,7 @@ export default function NoisesScreen() {
     configureAudio();
   }, []);
 
-  // Load saved states on mount
+  // Load saved category open or collapese state
   useEffect(() => {
     const loadExpandedStates = async () => {
       try {
@@ -519,7 +342,7 @@ export default function NoisesScreen() {
     loadExpandedStates();
   }, []);
 
-  // Cleanup on unmount
+  // Cleanup sound on unmount
   useEffect(() => {
     return sound
       ? () => {
@@ -660,6 +483,7 @@ export default function NoisesScreen() {
     }
   };
 
+  // Used for resetting onboarding local storage
   const resetOnboarding = async () => {
     try {
       await AsyncStorage.removeItem("hasSeenOnboarding");
@@ -669,161 +493,43 @@ export default function NoisesScreen() {
     }
   };
 
-  const onboardingSlides = [
-    {
-      id: "1",
-      title: "Welcome to Gamma Noise",
-      description:
-        "Discover a world of soothing sounds designed to enhance your daily life",
-      icon: "headset-outline",
-    },
-    {
-      id: "2",
-      title: "Improve Your Focus",
-      description:
-        "Use our carefully curated sounds to boost productivity and concentration",
-      icon: "brain-outline",
-    },
-    {
-      id: "3",
-      title: "Better Sleep & Relaxation",
-      description:
-        "Find peace with our collection of calming sounds and ambient noise",
-      icon: "moon-outline",
-    },
-  ];
-
-  const renderSlide = ({ item, index }: { item: any; index: number }) => {
-    return (
-      <View
-        style={{ width }}
-        className="flex-1 items-center justify-center px-6"
-      >
-        <LinearGradient
-          colors={["rgba(255,215,0,0.15)", "rgba(255,215,0,0)"]}
-          className="w-24 h-24 rounded-full items-center justify-center mb-8"
-        >
-          <Ionicons name={item.icon as any} size={48} color="#FFD700" />
-        </LinearGradient>
-
-        <Text className="text-white text-3xl font-bold mb-4 text-center">
-          {item.title}
-        </Text>
-        <Text className="text-gray-400 text-lg mb-8 text-center leading-6">
-          {item.description}
-        </Text>
-      </View>
-    );
-  };
-
-  const renderOnboarding = () => {
-    return (
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={showOnboarding}
-        onRequestClose={() => setShowOnboarding(false)}
-      >
-        <View className="flex-1 bg-[#021d32]">
-          <SafeAreaView className="flex-1">
-            {currentSlide < 3 ? (
-              <>
-                <FlatList
-                  ref={flatListRef}
-                  data={onboardingSlides}
-                  renderItem={renderSlide}
-                  horizontal
-                  pagingEnabled
-                  showsHorizontalScrollIndicator={false}
-                  onMomentumScrollEnd={(e) => {
-                    const newIndex = Math.round(
-                      e.nativeEvent.contentOffset.x / width
-                    );
-                    setCurrentSlide(newIndex);
-                  }}
-                />
-
-                {/* Pagination Dots */}
-                <View className="flex-row justify-center mb-8">
-                  {onboardingSlides.map((_, index) => (
-                    <View
-                      key={index}
-                      className={`h-2 w-2 rounded-full mx-1 ${
-                        currentSlide === index
-                          ? "bg-[#FFD700]"
-                          : "bg-gray-500/30"
-                      }`}
-                    />
-                  ))}
-                </View>
-
-                {/* Navigation Buttons */}
-                <View className="px-6 mb-8">
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (currentSlide < 2) {
-                        flatListRef.current?.scrollToIndex({
-                          index: currentSlide + 1,
-                          animated: true,
-                        });
-                        setCurrentSlide(currentSlide + 1);
-                      } else {
-                        setCurrentSlide(3); // Show paywall
-                      }
-                    }}
-                    className="bg-[#FFD700] p-4 rounded-full w-full mb-4"
-                  >
-                    <Text className="text-[#021d32] text-center font-bold text-lg">
-                      {currentSlide === 2 ? "Get Premium Access" : "Next"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      AsyncStorage.setItem("hasSeenOnboarding", "true");
-                      setShowOnboarding(false);
-                    }}
-                    className="p-4"
-                  >
-                    <Text className="text-gray-400 text-center">
-                      Skip for now
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <Paywall
-                onClose={() => {
-                  AsyncStorage.setItem("hasSeenOnboarding", "true");
-                  setShowOnboarding(false);
-                }}
-                onPurchaseComplete={() => {
-                  AsyncStorage.setItem("hasSeenOnboarding", "true");
-                  setShowOnboarding(false);
-                }}
-              />
-            )}
-          </SafeAreaView>
-        </View>
-      </Modal>
-    );
-  };
-
   // Don't render anything until we check AsyncStorage
   if (showOnboarding === null) {
     return null;
   }
 
+  const handleResetStorage = async () => {
+    try {
+      await AsyncStorage.clear();
+      // Optional: Show feedback
+      Alert.alert("Success", "Local storage has been cleared");
+    } catch (error) {
+      console.error("Error clearing storage:", error);
+    }
+  };
+
   return (
     <View className="flex-1 bg-[#021d32]">
       <SafeAreaView className="flex-1">
-        <View className="flex-row items-center justify-center px-4 mb-8 mt-4">
-          <View className="flex-1" />
-          <Text className="text-white text-center font-bold text-[25px]">
-            Gamma Noise
-          </Text>
+        <View className="flex-row items-center justify-center px-4 mb-4 mt-2">
+          <View className="flex-row items-start">
+            <TouchableOpacity onPress={handleResetStorage}>
+              <Ionicons name="trash-outline" size={20} color="#FFD700" />
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-row items-center">
+            <Image
+              className="w-12 h-12 mb-2"
+              resizeMode="contain"
+              source={require("../../assets/images/icon_no_bg_reduced.png")}
+            />
+            <Text className="text-white text-center -ml-1 font-bold text-[25px]">
+              amma Noise
+            </Text>
+          </View>
+
           <View className="flex-1 items-end">
-            {/* Right-aligned container */}
             <TouchableOpacity onPress={resetOnboarding} className="p-2">
               <Ionicons name="refresh-circle" size={24} color="#FFD700" />
             </TouchableOpacity>
@@ -894,7 +600,9 @@ export default function NoisesScreen() {
           </View>
         </ScrollView>
 
-        {showOnboarding && renderOnboarding()}
+        {/* Show OnBoarding Modal */}
+        {showOnboarding &&
+          onBoardingModal({ showOnboarding, setShowOnboarding })}
       </SafeAreaView>
     </View>
   );

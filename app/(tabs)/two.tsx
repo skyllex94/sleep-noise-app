@@ -121,7 +121,8 @@ export default function SettingsScreen() {
   };
 
   const handlePrivacyPolicy = async () => {
-    const url = "https://www.apple.com/legal/privacy/data/en/app-store/";
+    const url =
+      "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
     try {
       const canOpen = await Linking.canOpenURL(url);
       if (canOpen) {
@@ -188,6 +189,37 @@ export default function SettingsScreen() {
     );
   };
 
+  const formatTime = (minutes: number, displayTime?: boolean) => {
+    if (displayTime) {
+      if (minutes < 60) {
+        return `${minutes} minutes`;
+      } else {
+        if (minutes < 60) {
+          return `${minutes}m`;
+        }
+      }
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    if (remainingMinutes === 0) {
+      return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+    }
+
+    if (displayTime) {
+      return `${hours} ${
+        hours === 1 ? "hour" : "hours"
+      } and ${remainingMinutes} ${
+        remainingMinutes === 1 ? "minute" : "minutes"
+      }`;
+    } else {
+      return `${hours}${hours === 1 ? ":" : ":"}${remainingMinutes}${
+        remainingMinutes === 1 ? "m" : "m"
+      }`;
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#021d32]">
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -215,10 +247,8 @@ export default function SettingsScreen() {
             </View>
             {timerEnabled && (
               <Text className="text-gray-300 text-[14px]">
-                Sound will stop after {remainingTime ?? Math.round(timerValue)}{" "}
-                {(remainingTime ?? Math.round(timerValue)) === 1
-                  ? "minute"
-                  : "minutes"}
+                Sound will stop after{" "}
+                {formatTime(remainingTime ?? Math.round(timerValue), true)}
               </Text>
             )}
           </View>
@@ -323,42 +353,58 @@ export default function SettingsScreen() {
         visible={showTimerModal}
         onRequestClose={() => setShowTimerModal(false)}
       >
-        <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-[#0A3A5A] p-6 rounded-2xl w-[80%]">
-            <Text className="text-white text-center text-[18px] font-semibold mb-6">
-              Set Timer Duration
-            </Text>
-            <View className="flex-row items-center justify-between mb-8">
-              <Slider
-                style={{ width: "80%", height: 40 }}
-                minimumValue={5}
-                maximumValue={360}
-                step={5}
-                value={timerValue}
-                onValueChange={(value) => {
-                  setTimerValue(value);
-                }}
-                minimumTrackTintColor="#FFD700"
-                maximumTrackTintColor="#4A4A4A"
-                thumbTintColor="#FFD700"
-              />
-              <Text className="text-white text-[14px] ml-2">
-                {Math.round(timerValue)}m
+        <View className="flex-1 justify-center items-center">
+          <View
+            className="rounded-2xl w-[80%]"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 4,
+              },
+              shadowOpacity: 0.5,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <View className="bg-[#0A3A5A] rounded-2xl p-6">
+              <Text className="text-white text-center text-[18px] font-semibold mb-6">
+                Set Timer Duration
               </Text>
-            </View>
-            <View className="flex-row justify-end space-x-4">
-              <TouchableOpacity
-                onPress={() => setShowTimerModal(false)}
-                className="px-4 py-2"
-              >
-                <Text className="text-gray-300">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleTimerSet}
-                className="bg-[#FFD700] px-4 py-2 rounded-lg"
-              >
-                <Text className="text-[#021d32] font-semibold">Set Timer</Text>
-              </TouchableOpacity>
+              <View className="flex-row items-center justify-between mb-8">
+                <Slider
+                  style={{ width: "80%", height: 40 }}
+                  minimumValue={5}
+                  maximumValue={360}
+                  step={5}
+                  value={timerValue}
+                  onValueChange={(value) => {
+                    setTimerValue(value);
+                  }}
+                  minimumTrackTintColor="#FFD700"
+                  maximumTrackTintColor="#4A4A4A"
+                  thumbTintColor="#FFD700"
+                />
+                <Text className="text-white text-[14px] ml-2">
+                  {formatTime(Math.round(timerValue))}
+                </Text>
+              </View>
+              <View className="flex-row justify-end space-x-4">
+                <TouchableOpacity
+                  onPress={() => setShowTimerModal(false)}
+                  className="px-4 py-2"
+                >
+                  <Text className="text-gray-300">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleTimerSet}
+                  className="bg-[#FFD700] px-4 py-2 rounded-lg"
+                >
+                  <Text className="text-[#021d32] font-semibold">
+                    Set Timer
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>

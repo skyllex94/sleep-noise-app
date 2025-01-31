@@ -4,34 +4,41 @@
     "slug": "sleep-noise-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon.jpg",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#021D32"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zionstudios.sleepnoise",
+      "appStoreUrl": "https://apps.apple.com/us/app/id6741171503",
       "infoPlist": {
-        "UIBackgroundModes": ["audio", "remote-notification"],
-        "NSNowPlayingInfoUsageDescription": "This app uses Now Playing Info to show audio controls in Control Center and Lock Screen"
+        "UIBackgroundModes": [
+          "audio",
+          "remote-notification",
+          "audio",
+          "remote-notification"
+        ],
+        "NSNowPlayingInfoUsageDescription": "This app uses Now Playing Info to show audio controls in Control Center and Lock Screen",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#021D32"
       },
-      "permissions": ["android.permission.FOREGROUND_SERVICE"]
+      "permissions": [
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.jpg"
     },
     "plugins": [
       "expo-router",
@@ -41,7 +48,9 @@
           "microphonePermission": false
         }
       ],
-      ["expo-notifications"]
+      [
+        "expo-notifications"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
