@@ -15,11 +15,13 @@ export interface NoiseType {
 interface NoiseGroupType {
   title: string;
   noises: NoiseType[];
+  defaultExpanded?: boolean;
 }
 
 export const noiseGroups: NoiseGroupType[] = [
   {
     title: "Sleep Aid & Anxiety",
+    defaultExpanded: true,
     noises: [
       {
         name: "White Noise",
@@ -43,6 +45,7 @@ export const noiseGroups: NoiseGroupType[] = [
   },
   {
     title: "Stress Management",
+    defaultExpanded: true,
     noises: [
       {
         name: "Green Noise",
@@ -72,6 +75,7 @@ export const noiseGroups: NoiseGroupType[] = [
   },
   {
     title: "Tinnitus Relief",
+    defaultExpanded: true,
     noises: [
       {
         name: "Blue Noise",
@@ -98,6 +102,7 @@ export const noiseGroups: NoiseGroupType[] = [
   },
   {
     title: "Focus & Productivity",
+    defaultExpanded: false,
     noises: [
       {
         name: "40hz Binaural Beats",

@@ -184,7 +184,7 @@ export default function NoisesScreen() {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Now Playing",
-        body: isPremiumPreview ? `${noiseName} (Minute Preview)` : noiseName,
+        body: isPremiumPreview ? `${noiseName} (Preview)` : noiseName,
         data: { noiseName },
         categoryIdentifier: "playback",
         sticky: true,
@@ -512,11 +512,11 @@ export default function NoisesScreen() {
     <View className="flex-1 bg-[#021d32]">
       <SafeAreaView className="flex-1">
         <View className="flex-row items-center justify-center px-4 mb-4 mt-2">
-          <View className="flex-row items-start">
+          {/* <View className="flex-row items-start">
             <TouchableOpacity onPress={handleResetStorage}>
               <Ionicons name="trash-outline" size={20} color="#FFD700" />
             </TouchableOpacity>
-          </View>
+          </View> */}
 
           <View className="flex-row items-center">
             <Image
@@ -529,11 +529,11 @@ export default function NoisesScreen() {
             </Text>
           </View>
 
-          <View className="flex-1 items-end">
+          {/* <View className="flex-1 items-end">
             <TouchableOpacity onPress={resetOnboarding} className="p-2">
               <Ionicons name="refresh-circle" size={24} color="#FFD700" />
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
 
         <ScrollView

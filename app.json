@@ -2,7 +2,7 @@
   "expo": {
     "name": "Gamma Noise",
     "slug": "sleep-noise-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.jpg",
     "scheme": "myapp",
@@ -16,12 +16,7 @@
       "bundleIdentifier": "com.zionstudios.sleepnoise",
       "appStoreUrl": "https://apps.apple.com/us/app/id6741171503",
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio",
-          "remote-notification",
-          "audio",
-          "remote-notification"
-        ],
+        "UIBackgroundModes": ["audio", "remote-notification"],
         "NSNowPlayingInfoUsageDescription": "This app uses Now Playing Info to show audio controls in Control Center and Lock Screen",
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -48,9 +43,7 @@
           "microphonePermission": false
         }
       ],
-      [
-        "expo-notifications"
-      ]
+      ["expo-notifications"]
     ],
     "experiments": {
       "typedRoutes": true
