@@ -24,6 +24,11 @@ interface CustomOffering extends Offering {
   [key: string]: PurchasesPackage | undefined;
 }
 
+// *Make sure to input the RevenueCat API key in the RootLayout component
+// Purchases.configure({
+//   apiKey: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY ?? "",
+// });
+
 export default function useRevenueCat() {
   const [currentOffering, setCurrentOffering] = useState<CustomOffering | null>(
     null
@@ -36,10 +41,6 @@ export default function useRevenueCat() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        Purchases.configure({
-          apiKey: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY ?? "",
-        });
-
         // Get all offerings setup from RevenueCat
         const offerings = await Purchases.getOfferings();
         const customerInfo = await Purchases.getCustomerInfo();

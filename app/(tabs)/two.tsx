@@ -144,14 +144,18 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleRateApp = async () => {
+  // Fallback logic for rating the app
+  const rateApp = async () => {
     try {
-      const isAvailable = await StoreReview.isAvailableAsync();
-      if (isAvailable) {
-        await StoreReview.requestReview();
+      if (await StoreReview.hasAction()) {
+        StoreReview.requestReview();
+      } else {
+        const url = `https://apps.apple.com/app/id6741171503`;
+
+        Linking.openURL(url);
       }
     } catch (error) {
-      console.log("Error opening review:", error);
+      console.error("Error requesting app review:", error);
     }
   };
 
@@ -337,7 +341,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               className="flex-row items-center justify-between p-4"
               activeOpacity={0.7}
-              onPress={handleRateApp}
+              onPress={rateApp}
             >
               <Text className="text-white text-[16px]">Rate the App</Text>
               <Ionicons name="chevron-forward" size={20} color="#FFD700" />
