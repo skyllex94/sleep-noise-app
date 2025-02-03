@@ -10,7 +10,7 @@ export default function OnBoarding() {
   const onboardingSlides = [
     {
       id: "1",
-      title: "Welcome to Gamma Noise",
+      title: "Welcome to Gamma ",
       description:
         "Discover a world of soothing sounds designed to enhance your daily life",
       icon: "headset-outline",

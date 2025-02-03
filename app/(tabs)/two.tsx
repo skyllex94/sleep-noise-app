@@ -102,7 +102,7 @@ export default function SettingsScreen() {
 
   const handleContactUs = async () => {
     const email = "zionstudiosapps@gmail.com";
-    const subject = "GammaNoise Question";
+    const subject = "Gamma Noise Question";
     const body =
       "Hello, I would like to contact you regarding GammaNoise App on the App Store...";
 

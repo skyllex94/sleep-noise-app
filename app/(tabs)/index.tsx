@@ -525,7 +525,7 @@ export default function NoisesScreen() {
               source={require("../../assets/images/icon_no_bg_reduced.png")}
             />
             <Text className="text-white text-center -ml-1 font-bold text-[25px]">
-              amma Noise
+              amma
             </Text>
           </View>
 

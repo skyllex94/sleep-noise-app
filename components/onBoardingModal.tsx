@@ -2,7 +2,6 @@ import { View, Text, Modal, TouchableOpacity, Image } from "react-native";
 import React from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 
 interface onBoardingModalProps {
   showOnboarding: boolean;
@@ -39,7 +38,7 @@ export default function onBoardingModal({
             </View>
 
             <Text className="text-white text-3xl font-bold mb-4 text-center">
-              Welcome to Gamma Noise
+              Welcome to Gamma
             </Text>
 
             <Text className="text-gray-400 text-lg mb-6 text-center leading-6">
